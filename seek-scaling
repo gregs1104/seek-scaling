@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# seek-scaling wrapper
+# Calls the test and graphing scripts
+#
+# Greg Smith gsmith@gregsmith.com
+
+# TODO Make these into input parameters
+DESCR="Seek test"
+FILENAME="seek-results.log"
+GRAPH="results.png"
+
+echo "# ${DESCR}" > ${FILENAME}
+./seek-scaling-sysbench 2>&1 >>${FILENAME}
+./seek-scaling-report ${FILENAME}
+mv graph.png ${GRAPH}
+

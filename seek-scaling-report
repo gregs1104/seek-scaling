@@ -1,0 +1,208 @@
+#!/usr/bin/env python
+"""
+seek-scaling-report
+
+Read the text format output from a seek-scaling run.  Output a
+table of the results.
+
+Greg Smith gsmith@gregsmith.com
+"""
+
+import os
+import sys
+import optparse
+import logging
+
+# Normally whether debugging information will be logged or not is
+# the decision of the logger.  Keep a global for this purpose anyway,
+# specifically so that expensive debugging code paths can be skipped
+# altogether.
+debug=False
+
+class filter(object):
+    def __init__(self):
+        pass
+    
+    def add_options(parser):
+        parser.add_option('-i','--input',dest="input_file",default=None,
+            help="File to read from.  Defaults to standard input, except when overwritten by arguments after the regular options.")
+    
+        parser.add_option('-o','--output',dest="output_file",default=None,
+            help="File to write output to.  Defaults to standard output, except when overwritten by arguments after the regular options.")
+        
+        parser.add_option('-d','--debug',action="store_true",dest="debug",
+            default=False,help="Enable debugging mode")
+        return parser
+    add_options=staticmethod(add_options)
+
+    def setup_debug(options,args):
+        global debug
+        debug=options.debug
+    
+        if debug:
+            logging.getLogger().setLevel(logging.DEBUG)
+            logging.debug("Command line options:  %s",options)
+            logging.debug("Command line arguments:  %s",args)
+    setup_debug=staticmethod(setup_debug)
+
+    def parse_options(ver="1.0"):
+        """
+        Read command line options
+        """
+        logging.basicConfig(level=logging.INFO)        
+        parser=optparse.OptionParser(
+            usage="usage: %prog [options]",
+            version=ver,
+            conflict_handler="resolve")
+    
+        parser=filter.add_options(parser)
+        options,args=parser.parse_args()
+        filter.setup_debug(options,args)
+        return (options,args)
+    parse_options=staticmethod(parse_options)
+
+    def open_files(options,args):
+        if options.input_file is None:
+            file_to_process=sys.stdin
+        else:
+            logging.debug("Inputting from %s",options.input_file)
+            file_to_process=open(options.input_file,'r')
+    
+        if options.output_file is None:
+            out_file=sys.stdout
+        else:
+            logging.debug("Outputting to %s",options.output_file)
+            out_file=open(options.output_file,'w')
+    
+        r={'input':file_to_process,'output':file_to_process}
+        return r
+    open_files=staticmethod(open_files)
+
+def parse_seek_text(input,output):
+    results={}
+    values={}
+    descr=None
+    values['threads']=None
+    values['requests']=None
+    values['rate']=None
+
+    for line in input.readlines():
+        line=line.strip()
+        # If this is the first comment line seen, save it as the description
+        if line.startswith("#") and len(line)>2 and descr is None:
+            results['description']=line[2:]
+
+        """
+        Typical lines to try and parse here:
+
+        Number of threads: 48
+        Read 0b  Written 110.75Gb  Total transferred 110.75Gb  (377.48Mb/sec)
+        48316.99 Requests/sec executed
+        """
+
+        if line.find("Number of threads")>=0:
+            values['threads']=int(line.split(":")[1].strip())
+
+        if line.find("Total transferred")>=0:
+            values['rate']=line.split("(")[1].split(")")[0].strip()
+            # Presume rates are in MB/s; if not, scale to that level.
+            if values['rate'].endswith("Mb/sec"):
+                values['rate']=values['rate'][0:-6]
+            elif values['rate'].endswith("Kb/sec"):
+                r=float(values['rate'][0:-6]) / 1024
+                values['rate']="%s" % r
+            elif values['rate'].endswith("Gb/sec"):
+                r=float(values['rate'][0:-6]) * 1024
+                values['rate']="%s" % r
+            else:
+                logging.warn("Unrecognized rate in line:  '%s'",line)
+                values['rate']=None
+
+        if line.find("Requests/sec executed")>=0:
+            values['requests']=line.split()[0].strip()
+
+        if not (values['threads'] is None) and not (values['requests'] is None) and not (values['rate'] is None):
+            results[values['threads']]=values.copy()
+            values['threads']=None
+            values['requests']=None
+            values['rate']=None
+            
+    return results
+
+def gnuplotter(rows,y_axis):
+    """ Outputs a list of lists into gnuplot
+
+        - rows - list of dictionaries
+        - y_axis - dictionary field containing Y axis value
+                   Normally 'requests' or 'rate'
+        The x-axis is assumed to be 'threads'
+        """
+
+    if (True):
+        gp=os.popen('/usr/bin/gnuplot','w')
+    else:
+        # To see what's going into the gnuplot file, change the if 
+        # test from True to False
+        gp=sys.stdout
+
+    ylabel="MB/s"
+    if y_axis=='requests':
+        ylabel='IOPS'
+
+    # TODO Make the file name a parameter
+    gp.write("set output 'graph.png';")
+    gp.write("set term png size 640,480; set terminal png medium;\n")
+    gp.write("set grid xtics ytics;\n")
+    gp.write("set xlabel 'Threads'; set ylabel '%s'; \n" % ylabel);
+    gp.write("set title 'Seek Scaling'; \n")
+    gp.write("plot ")
+    
+    # Each line here is a new gnuplot date set file.  Iterate over the
+    # list once to describe all of them.
+    for rownum,row in enumerate(rows):
+        if row.has_key('description'):
+            key=row['description']
+        else:
+            key="Unknown"
+        delimiter=""
+        if rownum < (len(rows) - 1):
+             delimiter=", "
+        gp.write("'-' using 1:2 title '%s' with lines%s" % (key,delimiter))
+    gp.write("\n")
+
+    # Now output the file data
+    for row in rows:
+        for key in sorted(set(row)):
+            if key=='description':
+                continue
+            else:
+                gp.write("%s %s\n" % (row[key]['threads'],row[key][y_axis]))
+
+        # Write gnuplot file delimiter
+        gp.write("e\n")
+
+    gp.write("\n")
+    gp.close()
+
+if __name__=='__main__':
+    (options,args)=filter.parse_options()
+    out_sets=[]
+    # Work in two modes here:  if some args are passed, use that as
+    # a list of files to operate on.  Otherwise, use standard input
+    # or other command line options.
+    if len(args)>0:
+        fileset=filter.open_files(options, args)
+        for arg in args:
+            fileset['input']=open(arg,'r')
+            s=parse_seek_text(fileset['input'],fileset['output'])
+            out_sets.append(s)
+    else:
+        fileset=filter.open_files(options, args)
+        s=parse_seek_text(fileset['input'],fileset['output'])
+        out_sets.append(s)
+
+    if (debug):
+        print out_sets
+
+    gnuplotter(out_sets,'rate')
+#    gnuplotter(out_sets,'requests')
