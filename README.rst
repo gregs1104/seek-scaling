@@ -68,6 +68,24 @@ source code from a system that does and copy it over, such as:
 
 And then follow the above instructions to compile the program.
 
+TODO
+====
+
+seek-scaling is a rough set of scripts so far.  Plans for improving the
+program include:
+
+* Make all of the input parameters into script inputs (or perhaps a config file)
+
+* Handle the fact that seek-scaling-sysbench must be run as root, but root's
+  home directory is likely not where sysbench 0.4 is installed at, better
+
+* When running the program multiple times, look for the test files and skip
+  preparing them if found.
+
+* Provide a proper interface to execute sysbench cleanup.
+
+* Give examples of combining multiple files of output into a single graph.
+
 Documentation
 =============
 
