@@ -2,7 +2,71 @@ Introduction
 ============
 
 ``seek-scaling`` automates running the sysbench seek tests and plotting
-the results.
+the results.  It is currently compatible with Linux only.  The main
+non-portable requirement is the fact that it clears the operating
+system cache between each test run in a Linux-specific way.
+
+Customizing the program
+=======================
+
+Currently all of the input parameters to the program are hard-coded into
+the scripts.  Edit the following:
+
+ * seek-scaling:  Set the description of the device being tested (DESCR),
+   what filename to store the text format results (FILENAME), and what to name
+   the graph of the results (GRAPH)
+ * seek-scaling-sysbench:  Set the size of the data set (GBSIZE) and what
+   type of test to run (MODE).  
+
+You can also adjust parameters like the number of threads and the amount of
+time to run the test, but changing those shouldn't be necessary for most
+tests.
+
+The useful testing modes for seek-scaling are:
+
+ * rndrd: random read (the default)
+ * rndwr: random write 
+ * rndrw: combined random read/write 
+ * seqwr: sequential write 
+ * seqrd: sequential read 
+
+The program assumes you have sysbench installed in the 0.4 subdirectory of
+your home directory.  Installation instructions for tha tprogram are below.
+
+Installing sysbench
+===================
+
+seek-scaling requires that the sysbench program be installed.
+The stable 0.4 version is recommended.  The packaged releases
+of sysbench are difficult to compile on many systems.  Those
+problems are most easily resolved by installing the latest
+development snapshot instead, where the build issues are
+fixed.  Assuming you have the bazaar version control system
+installed, the developer snapshot can be installed into your
+home directory like this::
+
+  cd
+  bzr checkout https://code.launchpad.net/~sysbench-developers/sysbench/0.4/
+  cd 0.4
+  ./autogen.sh
+  ./configure --without-mysql
+  make
+
+You don't need to install sysbench to use it for seek-scaling.  Whether or not
+the included by default MySQL support is installed in sysbench doesn't matter
+to the program either.
+
+If your server doesn't/can't have bazaar installed, you might archive the
+source code from a system that does and copy it over, such as:
+
+  cd
+  bzr checkout https://code.launchpad.net/~sysbench-developers/sysbench/0.4/
+  tar cvfz sysbench-0.4.tar.gz 0.4
+  scp sysbench-0.4.tar.gz user@testhost:
+  ssh user@testhost
+  tar xvfz sysbench-0.4.tar.gz
+
+And then follow the above instructions to compile the program.
 
 Documentation
 =============

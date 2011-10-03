@@ -5,7 +5,7 @@ seek-scaling-report
 Read the text format output from a seek-scaling run.  Output a
 table of the results.
 
-Greg Smith gsmith@gregsmith.com
+Greg Smith greg@2ndQuadrant.com
 """
 
 import os

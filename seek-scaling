@@ -3,7 +3,7 @@
 # seek-scaling wrapper
 # Calls the test and graphing scripts
 #
-# Greg Smith gsmith@gregsmith.com
+# Greg Smith greg@2ndQuadrant.com
 
 # TODO Make these into input parameters
 DESCR="Seek test"
