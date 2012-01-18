@@ -9,9 +9,15 @@
 DESCR="Seek test"
 FILENAME="seek-results.log"
 GRAPH="results.png"
+TESTDIR=`pwd`
 
+BIN=`pwd`
+pushd $TESTDIR
 echo "# ${DESCR}" > ${FILENAME}
-./seek-scaling-sysbench 2>&1 >>${FILENAME}
+$BIN/seek-scaling-sysbench 2>&1 >>${FILENAME}
+popd
+mv ${TESTDIR}/${FILENAME} .
+
 ./seek-scaling-report ${FILENAME}
 mv graph.png ${GRAPH}
 
