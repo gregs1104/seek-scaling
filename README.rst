@@ -13,8 +13,10 @@ Currently all of the input parameters to the program are hard-coded into
 the scripts.  Edit the following:
 
  * seek-scaling:  Set the description of the device being tested (DESCR),
-   what filename to store the text format results (FILENAME), and what to name
-   the graph of the results (GRAPH)
+   what filename to store the text format results (FILENAME), what to name
+   the graph of the results (GRAPH), and the directory to create the test
+   files and runn against (TESTDIR), and where the sysbench executable
+   is located at (PREFIX)
  * seek-scaling-sysbench:  Set the size of the data set (GBSIZE) and what
    type of test to run (MODE).  
 

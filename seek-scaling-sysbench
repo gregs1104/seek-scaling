@@ -7,7 +7,7 @@
 #
 # Takes 1 input parameter: the base directory if your sysbench build
 # tree.  If not supplied, it guesses you have a bzr checkout of version
-# 0.4 in home directory and tries there.
+# 0.4 in your home directory and tries there.
 #
 
 # TODO Make all of these proper command line parameters

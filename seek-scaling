@@ -10,11 +10,12 @@ DESCR="Seek test"
 FILENAME="seek-results.log"
 GRAPH="results.png"
 TESTDIR=`pwd`
+PREFIX="$HOME/0.4"
 
 BIN=`pwd`
-pushd $TESTDIR
+pushd ${TESTDIR}
 echo "# ${DESCR}" > ${FILENAME}
-$BIN/seek-scaling-sysbench 2>&1 >>${FILENAME}
+$BIN/seek-scaling-sysbench ${PREFIX} 2>&1 >>${FILENAME}
 popd
 mv ${TESTDIR}/${FILENAME} .
 
