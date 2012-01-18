@@ -3,7 +3,7 @@
 #
 # Execute sysbench seek test from the current working directory
 #
-# Greg Smith gsmith@gregsmith.com
+# Greg Smith greg@2ndQuadrant.com
 #
 # Takes 1 input parameter: the base directory if your sysbench build
 # tree.  If not supplied, it guesses you have a bzr checkout of version
