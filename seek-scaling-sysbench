@@ -17,24 +17,35 @@ GBSIZE=100
 SECS=300
 MODE=rndrd
 
-PREFIX="$HOME/0.4"
-if [ -n "$1" ] ; then
-  PREFIX="$1"
-fi
-SYSBENCH=$PREFIX/sysbench/sysbench
-if [ ! -x $SYSBENCH ] ; then
-  echo Did not find a sysbench binary at $SYSBENCH
+#
+# Cache flushing code only works as root
+#
+if [ ! "$USER" = "root" ] ; then
+  echo Error:  the cache clearing code of seek-scaling can only be run as root.
   exit 1
 fi
 
-$SYSBENCH --test=fileio --num-threads=1 --file-num=$GBSIZE --file-total-size=${GBSIZE}G --file-block-size=8K --file-test-mode=rndrd --file-fsync-freq=0 --file-fsync-end=no prepare
+#
+# Find sysbench executable
+#
+SYSBENCHBIN=`which sysbench`
+if [ $? -ne 0 ] ; then
+  SYSBENCHBIN=$HOME/0.4/sysbench/sysbench
+  if [ ! -x $SYSBENCHBIN ] ; then
+    echo Cannot find a sysbench binary to use.
+    echo Place a binary in the PATH, or install a repo checkout to \$HOME/0.4
+    exit 2
+  fi
+fi
+
+$SYSBENCHBIN --test=fileio --num-threads=1 --file-num=$GBSIZE --file-total-size=${GBSIZE}G --file-block-size=8K --file-test-mode=rndrd --file-fsync-freq=0 --file-fsync-end=no prepare
 
 for THREAD in $THREADS ; do
   # Try to clean the OS cache, will only work if run as root
   sync
   echo 3 > /proc/sys/vm/drop_caches
 
-  $SYSBENCH --test=fileio --num-threads=$THREAD --file-num=$GBSIZE --file-total-size=${GBSIZE}G --file-block-size=8K --file-test-mode=$MODE --file-fsync-freq=0 --file-fsync-end=no run --max-time=$SECS --max-requests=0
+  $SYSBENCHBIN --test=fileio --num-threads=$THREAD --file-num=$GBSIZE --file-total-size=${GBSIZE}G --file-block-size=8K --file-test-mode=$MODE --file-fsync-freq=0 --file-fsync-end=no run --max-time=$SECS --max-requests=0
 done
 
 echo
@@ -42,5 +53,5 @@ echo == Test finished ==
 echo
 echo To cleanup:
 echo
-echo $SYSBENCH --test=fileio --num-threads=1 --file-num=$GBSIZE --file-total-size=${GBSIZE}G --file-block-size=8K --file-test-mode=$MODE --file-fsync-freq=0 --file-fsync-end=no cleanup
+echo $SYSBENCHBIN --test=fileio --num-threads=1 --file-num=$GBSIZE --file-total-size=${GBSIZE}G --file-block-size=8K --file-test-mode=$MODE --file-fsync-freq=0 --file-fsync-end=no cleanup
 

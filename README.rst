@@ -4,7 +4,8 @@ Introduction
 ``seek-scaling`` automates running the sysbench seek tests and plotting
 the results.  It is currently compatible with Linux only.  The main
 non-portable requirement is the fact that it clears the operating
-system cache between each test run in a Linux-specific way.
+system cache between each test run in a Linux-specific way.  The program
+must be run as root in order to work.
 
 Customizing the program
 =======================
@@ -32,8 +33,9 @@ The useful testing modes for seek-scaling are:
  * seqwr: sequential write 
  * seqrd: sequential read 
 
-The program assumes you have sysbench installed in the 0.4 subdirectory of
-your home directory.  Installation instructions for tha tprogram are below.
+The program assumes you have sysbench in your PATH, or installed in the 0.4
+subdirectory of your home directory.  Installation instructions for that
+program are below.
 
 Installing sysbench
 ===================
@@ -116,7 +118,7 @@ License
 
 seek-scaling is licensed under a standard 3-clause BSD license.
 
-Copyright (c) 2011, Gregory Smith
+Copyright (c) 2011-2013, Gregory Smith
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 

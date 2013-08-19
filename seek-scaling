@@ -1,24 +1,76 @@
-#!/bin/bash
+#!/bin/bash -x
 
-# seek-scaling wrapper
-# Calls the test and graphing scripts
+# seek-scaling
+# Wrapper that runs the test and graphs the results
 #
 # Greg Smith greg@2ndQuadrant.com
+#
+# sample usage:
+#
+#   seek-scaling /data seek-results "Seek test"
+#
+# Input parameters:
+#
+# 1:  test directory.  Defaults to current directory.
+# 2:  short one word name of test.  Used to name the output file.
+# 3:  long test description.
 
-# TODO Make these into input parameters
-DESCR="Seek test"
-FILENAME="seek-results.log"
-GRAPH="results.png"
-TESTDIR=`pwd`
-PREFIX="$HOME/0.4"
+#
+# Validate input parameters.  Default to running a test in the current
+# directory, with generic file names and description.
+#
+if [ -n "$1" ] ; then
+  TESTDIR=$1
+else
+  TESTDIR=`pwd`
+fi
 
-BIN=`pwd`
+if [ ! -d "$TESTDIR" ] ; then
+  echo Error:  test directory $TESTDIR does not exist
+  exit 1
+fi
+
+if [ -n "$2" ] ; then
+  RESULTFILE=$2
+else
+  RESULTFILE="seek-results"
+fi
+
+if [ -n "$3" ] ; then
+  DESCR=$3
+else
+  DESCR="Seek test $TESTDIR"
+fi
+
+#
+# Derived settings
+#
+FILENAME="${RESULTFILE}.log"
+GRAPH="${RESULTFILE}.png"
+
+# Use a dirname call that works correctly when the program
+# is run with "./"  This will not follow symlinks and has some
+# limitations.  See http://mywiki.wooledge.org/BashFAQ/028
+BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#
+# Run the test
+#
 pushd ${TESTDIR}
 echo "# ${DESCR}" > ${FILENAME}
-$BIN/seek-scaling-sysbench ${PREFIX} 2>&1 >>${FILENAME}
+$BASE/seek-scaling-sysbench 2>&1 >>${FILENAME}
+if [ "$?" -ne 0 ] ; then
+  Error:  seek-scaling-sysbench did not run correctly
+  popd
+  exit 1
+fi
 popd
+
 mv ${TESTDIR}/${FILENAME} .
 
+#
+# Report and graph the results
+#
 ./seek-scaling-report ${FILENAME}
 mv graph.png ${GRAPH}
 

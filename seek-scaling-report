@@ -149,7 +149,8 @@ def gnuplotter(rows,y_axis):
     if y_axis=='requests':
         ylabel='IOPS'
 
-    # TODO Make the file name a parameter
+    # TODO Make the file name a parameter.  Not really important given
+    # the likely caller here, seek-scaling, renames for us.
     gp.write("set output 'graph.png';")
     gp.write("set term png size 640,480; set terminal png medium;\n")
     gp.write("set grid xtics ytics;\n")
